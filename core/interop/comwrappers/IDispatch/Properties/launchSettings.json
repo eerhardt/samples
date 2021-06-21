@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "ComWrappersIDispatch": {
+      "commandName": "Executable",
+      "executablePath": "C:\\git\\samples\\core\\interop\\comwrappers\\IDispatch\\bin\\Debug\\net6.0-windows\\ComWrappersIDispatch.exe",
+      "environmentVariables": {
+        "DOTNET_ROOT": "C:\\dotnet"
+      },
+      "nativeDebugging": true
+    }
+  }
+}

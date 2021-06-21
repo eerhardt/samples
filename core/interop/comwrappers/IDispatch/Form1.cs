@@ -28,7 +28,7 @@ $@"<button onClick=""dispatch()"">Send to .NET!</button>
 
             this.Controls.Add(this.webBrowser1);
 
-            Icon i = SystemIcons.Hand;
+            Icon i = SystemIcons.Question;
             PICTDESC pictdesc = PICTDESC.CreateIconPICTDESC(i.Handle);
             Guid g = IPicture.Guid;
             IntPtr lpPicture;
@@ -44,10 +44,12 @@ $@"<button onClick=""dispatch()"">Send to .NET!</button>
             var gpStream = new GPStream(memStream, makeSeekable: false);
             IntPtr streamPtr = ComWrappersImpl.Instance.GetOrCreateComInterfaceForObject(gpStream, CreateComInterfaceFlags.None);
 
-            var inst = Marshal.PtrToStructure<ComWrappersImpl.VtblPtr>(streamPtr);
-            Debug.WriteLine($"vtbl: {inst.Vtbl}");
-
             picture.SaveAsFile(streamPtr, -1, out _);
+
+            memStream.Position = 0;
+            var image = Image.FromStream(memStream);
+
+            pictureBox1.Image = image;
 
             Marshal.Release(streamPtr);
             Marshal.Release(lpPicture);

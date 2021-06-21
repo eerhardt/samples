@@ -6,18 +6,15 @@ using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Runtime.InteropServices.ComTypes;
-using ComTypes = System.Runtime.InteropServices.ComTypes;
 
 internal unsafe class ComWrappersImpl : ComWrappers
 {
-    private static readonly ComInterfaceEntry* wrapperEntry;// = InitializeComInterfaceEntry();
+    private static readonly ComInterfaceEntry* wrapperEntry = InitializeComInterfaceEntry();
     private static readonly Lazy<ComWrappersImpl> g_ComWrappers = new Lazy<ComWrappersImpl>(() => new ComWrappersImpl(), true);
 
     internal static ComWrappersImpl Instance => g_ComWrappers.Value;
 
-    //private static ComInterfaceEntry* InitializeComInterfaceEntry()
-    static ComWrappersImpl()
+    private static ComInterfaceEntry* InitializeComInterfaceEntry()
     {
         GetIUnknownImpl(out IntPtr fpQueryInteface, out IntPtr fpAddRef, out IntPtr fpRelease);
 
@@ -44,13 +41,13 @@ internal unsafe class ComWrappersImpl : ComWrappers
         var vtblRaw = RuntimeHelpers.AllocateTypeAssociatedMemory(typeof(IStreamVtbl), sizeof(IStreamVtbl));
         Marshal.StructureToPtr(vtbl, vtblRaw, false);
 
-        wrapperEntry = (ComInterfaceEntry*)RuntimeHelpers.AllocateTypeAssociatedMemory(typeof(IStreamVtbl), sizeof(ComInterfaceEntry));
+        ComInterfaceEntry* wrapperEntry = (ComInterfaceEntry*)RuntimeHelpers.AllocateTypeAssociatedMemory(typeof(IStreamVtbl), sizeof(ComInterfaceEntry));
         wrapperEntry->IID = new Guid("0000000C-0000-0000-C000-000000000046");
         wrapperEntry->Vtable = vtblRaw;
 
         Debug.WriteLine($"vtable {vtblRaw}");
         Debug.WriteLine($"vtable {wrapperEntry->Vtable}");
-        //return wrapperEntry;
+        return wrapperEntry;
     }
 
     protected override unsafe ComInterfaceEntry* ComputeVtables(object obj, CreateComInterfaceFlags flags, out int count)
@@ -83,14 +80,14 @@ internal unsafe class ComWrappersImpl : ComWrappers
         throw new NotImplementedException();
     }
 
-    public struct IUnknownVtbl
+    internal struct IUnknownVtbl
     {
         public IntPtr QueryInterface;
         public IntPtr AddRef;
         public IntPtr Release;
     }
 
-    public struct IStreamVtbl
+    internal struct IStreamVtbl
     {
         public IUnknownVtbl IUnknownImpl;
         public IntPtr Read;
@@ -219,7 +216,8 @@ internal unsafe class ComWrappersImpl : ComWrappers
         }
     }
 
-    public struct IPictureVtbl
+#pragma warning disable CS0649
+    internal struct IPictureVtbl
     {
         internal delegate int _SaveAsFile(IntPtr thisPtr, IntPtr pstm, int fSaveMemCopy, out int pcbSize);
 
@@ -241,10 +239,11 @@ internal unsafe class ComWrappersImpl : ComWrappers
         public IntPtr SetHdc;
     }
 
-    public struct VtblPtr
+    internal struct VtblPtr
     {
         public IntPtr Vtbl;
     }
+#pragma warning restore CS0649
 
     private class PictureWrapper : IPicture
     {
@@ -261,10 +260,14 @@ internal unsafe class ComWrappersImpl : ComWrappers
 
         public int SaveAsFile(IntPtr pstm, int fSaveMemCopy, out int pcbSize)
         {
-            var inst = Marshal.PtrToStructure<VtblPtr>(pstm);
-            Debug.WriteLine($"vtbl: {inst.Vtbl}");
+            Guid streamGuid = IStream.Guid;
+            int result = Marshal.QueryInterface(pstm, ref streamGuid, out IntPtr pstmInst);
+            if (result != (int)HRESULT.S_OK)
+            {
+                throw new COMException(null, result);
+            }
 
-            return _vtable.SaveAsFile(_wrappedInstance, pstm, fSaveMemCopy, out pcbSize);
+            return _vtable.SaveAsFile(_wrappedInstance, pstmInst, fSaveMemCopy, out pcbSize);
         }
 
         // The following are not implemented because they are never invoked

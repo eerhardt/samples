@@ -13,11 +13,13 @@ using System.Runtime.InteropServices.ComTypes;
 /// The definition in <see cref="System.Runtime.InteropServices.ComTypes"/> does not lend
 /// itself to efficiently accessing / implementing IStream.
 /// </remarks>
-[//ComImport,
-    Guid("0000000C-0000-0000-C000-000000000046")]//,
+//[//ComImport,
+//    Guid("0000000C-0000-0000-C000-000000000046")]//,
                                                  //InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
 internal interface IStream
 {
+    static readonly Guid Guid = new Guid(0x0000000C, 0x0000, 0x0000, 0xC0, 0x00, 0, 0, 0, 0, 0, 0x46);
+
     // pcbRead is optional so it must be a pointer
     unsafe void Read(byte* pv, uint cb, uint* pcbRead);
 
