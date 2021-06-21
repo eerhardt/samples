@@ -7,7 +7,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
 
-public class AnyObjectProxy : ComWrappersImpl.IDispatch,
+public class AnyObjectProxy : //ComWrappersImpl.IDispatch,
     ICustomQueryInterface /* WORKAROUND for WinForms WebBrowser control API */
 {
     private static Lazy<ComWrappers> g_ComWrappers = new Lazy<ComWrappers>(() => new ComWrappersImpl(), true);
@@ -49,82 +49,82 @@ public class AnyObjectProxy : ComWrappersImpl.IDispatch,
         }
     }
 
-    void ComWrappersImpl.IDispatch.GetTypeInfoCount(out int pctinfo)
-    {
-        // Will always be called.
-        // Returning 0 is a completely acceptable return value.
-        pctinfo = 0;
-    }
+    //void ComWrappersImpl.IDispatch.GetTypeInfoCount(out int pctinfo)
+    //{
+    //    // Will always be called.
+    //    // Returning 0 is a completely acceptable return value.
+    //    pctinfo = 0;
+    //}
 
-    void ComWrappersImpl.IDispatch.GetTypeInfo(int iTInfo, int lcid, out IntPtr info)
-    {
-        // If GetTypeInfoCount() returns 0, this function will not be called.
-        throw new NotImplementedException();
-    }
+    //void ComWrappersImpl.IDispatch.GetTypeInfo(int iTInfo, int lcid, out IntPtr info)
+    //{
+    //    // If GetTypeInfoCount() returns 0, this function will not be called.
+    //    throw new NotImplementedException();
+    //}
 
-    void ComWrappersImpl.IDispatch.GetIDsOfNames(ref Guid iid, string[] names, int cNames, int lcid, int[] rgDispId)
-    {
-        Debug.Assert(iid == Guid.Empty);
-        for (int i = 0; i < cNames; ++i)
-        {
-            int dispId = 0;
-            if (!this.nameToDispId.TryGetValue(names[i], out dispId))
-            {
-                throw new COMException(null, DISP_E_UNKNOWNNAME);
-            }
+    //void ComWrappersImpl.IDispatch.GetIDsOfNames(ref Guid iid, string[] names, int cNames, int lcid, int[] rgDispId)
+    //{
+    //    Debug.Assert(iid == Guid.Empty);
+    //    for (int i = 0; i < cNames; ++i)
+    //    {
+    //        int dispId = 0;
+    //        if (!this.nameToDispId.TryGetValue(names[i], out dispId))
+    //        {
+    //            throw new COMException(null, DISP_E_UNKNOWNNAME);
+    //        }
 
-            rgDispId[i] = dispId;
-        }
-    }
+    //        rgDispId[i] = dispId;
+    //    }
+    //}
 
-    void ComWrappersImpl.IDispatch.Invoke(
-        int dispIdMember,
-        ref Guid riid,
-        int lcid,
-        INVOKEKIND wFlags,
-        ref DISPPARAMS pDispParams,
-        IntPtr VarResult,
-        IntPtr pExcepInfo,
-        IntPtr puArgErr)
-    {
-        MemberInfo? memberInfo;
-        if (!this.dispIdToMemberInfo.TryGetValue(dispIdMember, out memberInfo))
-        {
-            throw new COMException(null, DISP_E_UNKNOWNNAME);
-        }
+    //void ComWrappersImpl.IDispatch.Invoke(
+    //    int dispIdMember,
+    //    ref Guid riid,
+    //    int lcid,
+    //    INVOKEKIND wFlags,
+    //    ref DISPPARAMS pDispParams,
+    //    IntPtr VarResult,
+    //    IntPtr pExcepInfo,
+    //    IntPtr puArgErr)
+    //{
+    //    MemberInfo? memberInfo;
+    //    if (!this.dispIdToMemberInfo.TryGetValue(dispIdMember, out memberInfo))
+    //    {
+    //        throw new COMException(null, DISP_E_UNKNOWNNAME);
+    //    }
 
-        BindingFlags invokeFlags = BindingFlags.Public | BindingFlags.Instance;
-        if (wFlags.HasFlag(INVOKEKIND.INVOKE_FUNC)
-                && memberInfo.MemberType == MemberTypes.Method)
-        {
-            invokeFlags |= BindingFlags.InvokeMethod;
-        }
-        else
-        {
-            throw new NotImplementedException("Operation not implemented.");
-        }
+    //    BindingFlags invokeFlags = BindingFlags.Public | BindingFlags.Instance;
+    //    if (wFlags.HasFlag(INVOKEKIND.INVOKE_FUNC)
+    //            && memberInfo.MemberType == MemberTypes.Method)
+    //    {
+    //        invokeFlags |= BindingFlags.InvokeMethod;
+    //    }
+    //    else
+    //    {
+    //        throw new NotImplementedException("Operation not implemented.");
+    //    }
 
-        // Use reflection to dispatch to the indicated function.
-        // Note that this is exactly what the internal implementation of IDispatch does so there
-        // isn't a lot of difference in cost.
-        var result = this.objType.InvokeMember(
-            memberInfo.Name,
-            invokeFlags,
-            null,
-            this.obj,
-            MarshalArguments(ref pDispParams));
+    //    // Use reflection to dispatch to the indicated function.
+    //    // Note that this is exactly what the internal implementation of IDispatch does so there
+    //    // isn't a lot of difference in cost.
+    //    var result = this.objType.InvokeMember(
+    //        memberInfo.Name,
+    //        invokeFlags,
+    //        null,
+    //        this.obj,
+    //        MarshalArguments(ref pDispParams));
 
-        if (result != null)
-        {
-            // Lots of special cases should be addressed here.
-            //  * Arrays, IEnumerable
-            //  * IDispatch/IUnknown instances
-            //  * .NET object could be wrapped by ComWrappers
-            //  * .NET objects that are already COM objects can be safely passed on
-            //  * etc
-            Marshal.GetNativeVariantForObject(result, VarResult);
-        }
-    }
+    //    if (result != null)
+    //    {
+    //        // Lots of special cases should be addressed here.
+    //        //  * Arrays, IEnumerable
+    //        //  * IDispatch/IUnknown instances
+    //        //  * .NET object could be wrapped by ComWrappers
+    //        //  * .NET objects that are already COM objects can be safely passed on
+    //        //  * etc
+    //        Marshal.GetNativeVariantForObject(result, VarResult);
+    //    }
+    //}
 
     private static object[] MarshalArguments(ref DISPPARAMS pDispParams)
     {
@@ -152,7 +152,7 @@ public class AnyObjectProxy : ComWrappersImpl.IDispatch,
         // Return the ComWrappers IDispatch implementation
         // instead of the one provided by the runtime.
         if (!this.inGetInterface
-            && iid == typeof(ComWrappersImpl.IDispatch).GUID)
+            && iid == typeof(IStream).GUID)
         {
             try
             {
